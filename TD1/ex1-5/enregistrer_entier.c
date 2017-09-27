@@ -9,10 +9,11 @@ int main(int argc, char** argv){
 
   int fd = open(argv[1], O_WRONLY);
   int pos = atoi(argv[2]);
-  int val = atoi(argv[3]);
+  unsigned int val = atoi(argv[3]);
 
-  lseek(fd, pos, SEEK_END);
-  write(fd, &val, sizeof(val));
+  lseek(fd, pos * sizeof(unsigned int), SEEK_SET);
+  write(fd, &val, sizeof(unsigned int));
 
+  close(fd);
   return 0;
 }
