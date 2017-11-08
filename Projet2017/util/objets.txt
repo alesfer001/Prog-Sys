@@ -1,0 +1,10 @@
+"images/ground.png"	1	solid      not-destructible not-collectible	not-generator
+"images/wall.png"	1 	solid      not-destructible not-collectible	not-generator
+"images/grass.png"	1 	semi-solid not-destructible not-collectible	not-generator
+"images/herb.png"	1 	air 	   not-destructible not-collectible	not-generator
+"images/floor.png"	1 	semi-solid not-destructible not-collectible	not-generator
+"images/marble.png"	1 	solid 	   destructible     not-collectible	not-generator
+"images/marble2.png"	1 	solid 	   not-destructible not-collectible	not-generator
+"images/coin.png"	20 	air 	   destructible     collectible		not-generator
+"images/question.png"	17      solid	   not-destructible not-collectible	generator
+"images/flower.png"	1	air	   not-destructible not-collectible	not-generator
