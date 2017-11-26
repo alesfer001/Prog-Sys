@@ -8,7 +8,7 @@
 
 int main(int argc, char** argv){
   if(argc < 3){
-    fprintf (stderr, "Error 003: Not Enough Args for maputil\n maputil <file> --options\n options : getwidth, getheight, getobjects, getinfo\n");
+    fprintf (stderr, "Error 003: Not Enough Args for maputil\n maputil <file> --options [value]\n options : getwidth, getheight, getobjects, getinfo\n options : setwidth [value], setheight [value]\n");
   }
 
   int fd = open(argv[1], O_RDWR);
@@ -44,96 +44,100 @@ int main(int argc, char** argv){
     }
     else if(strcmp(argv[i], "--setwidth") == 0){
       i++;
-      //ERROR ARG
-      int new_width = atoi(argv[i]);
-      int old_width = 0;
-      int height = 0;
-      int nb_objects = 0;
-      lseek(fd, 0, SEEK_SET);
-      read(fd, &old_width, sizeof(int));
-      read(fd, &height, sizeof(int));
-      read(fd, &nb_objects, sizeof(int));
-
-      int objects[old_width*height];
-      for(int x=0; x<old_width; x++){
-        for(int y=0; y<height; y++){
-          read(fd, objects+(x+old_width*y), sizeof(int));
-        }
+      if(argv[i] == NULL){
+        fprintf (stderr, "Error 003: Not Enough Args for maputil\n maputil <file> --options [value]\n options : getwidth, getheight, getobjects, getinfo\n options : setwidth [value], setheight [value]\n");
       }
+      else{
+        int new_width = atoi(argv[i]);
+        int old_width = 0;
+        int height = 0;
+        int nb_objects = 0;
+        lseek(fd, 0, SEEK_SET);
+        read(fd, &old_width, sizeof(int));
+        read(fd, &height, sizeof(int));
+        read(fd, &nb_objects, sizeof(int));
 
-      char *objectsname[nb_objects];
-      for(int i=0; i<nb_objects; i++){
-        objectsname[i] = calloc(256, sizeof(char));
-      }
-      int frames[nb_objects];
-      int soliditys[nb_objects];
-      int destructibles[nb_objects];
-      int collectibles[nb_objects];
-      int generators[nb_objects];
-
-      char *object = calloc(256, sizeof(char));
-      for(int i=0; i<nb_objects; i++){
-        char buf = ' ';
-        int count=0;
-        while(buf != 0){
-          read(fd, &buf, sizeof(char));
-          count++;
-        }
-        lseek(fd, (0-count) * sizeof(char), SEEK_CUR);
-        read(fd, object, count*sizeof(char));
-        lseek(fd, (256-count) * sizeof(char), SEEK_CUR);
-        strcpy(objectsname[i], object);
-
-        read(fd, frames+i, sizeof(int));
-
-        int solidity;
-        read(fd, soliditys+i, sizeof(int));
-        int destructible;
-        read(fd, destructibles+i, sizeof(int));
-        int collectible;
-        read(fd, collectibles+i, sizeof(int));
-        int generator;
-        read(fd, generators+i, sizeof(int));
-      }
-
-      lseek(fd, 3 * sizeof(int), SEEK_SET);
-      if(old_width > new_width){
-        for(int x=0; x<new_width; x++){
-          for(int y=0; y<height; y++){
-            write(fd , objects+(x+old_width*y), sizeof(int));
-          }
-        }
-      }
-      else if(old_width < new_width){
+        int objects[old_width*height];
         for(int x=0; x<old_width; x++){
           for(int y=0; y<height; y++){
-            write(fd , objects+(x+old_width*y), sizeof(int));
+            read(fd, objects+(x+old_width*y), sizeof(int));
           }
         }
-        int buf = -1;
-        for(int x=old_width; x<new_width; x++){
-          for(int y=0; y<height; y++){
-            write(fd, &buf, sizeof(int));
-          }
-        }
-      }
 
-      if(old_width != new_width){
+        char *objectsname[nb_objects];
         for(int i=0; i<nb_objects; i++){
-          char *buf = calloc(256, sizeof(char));
-          strcpy(buf, objectsname[i]);
-          write(fd, buf, 256*sizeof(char));
-          write(fd, frames+i, sizeof(int));
-          write(fd, soliditys+i, sizeof(int));
-          write(fd, destructibles+i, sizeof(int));
-          write(fd, collectibles+i, sizeof(int));
-          write(fd, generators+i, sizeof(int));
+          objectsname[i] = calloc(256, sizeof(char));
+        }
+        int frames[nb_objects];
+        int soliditys[nb_objects];
+        int destructibles[nb_objects];
+        int collectibles[nb_objects];
+        int generators[nb_objects];
+
+        char *object = calloc(256, sizeof(char));
+        for(int i=0; i<nb_objects; i++){
+          char buf = ' ';
+          int count=0;
+          while(buf != 0){
+            read(fd, &buf, sizeof(char));
+            count++;
+          }
+          lseek(fd, (0-count) * sizeof(char), SEEK_CUR);
+          read(fd, object, count*sizeof(char));
+          lseek(fd, (256-count) * sizeof(char), SEEK_CUR);
+          strcpy(objectsname[i], object);
+
+          read(fd, frames+i, sizeof(int));
+
+          int solidity;
+          read(fd, soliditys+i, sizeof(int));
+          int destructible;
+          read(fd, destructibles+i, sizeof(int));
+          int collectible;
+          read(fd, collectibles+i, sizeof(int));
+          int generator;
+          read(fd, generators+i, sizeof(int));
         }
 
-      lseek(fd, 0, SEEK_SET);
-      write(fd, &new_width, sizeof(int));
-    }
-      printf("New map width : %d\n", new_width);
+        lseek(fd, 3 * sizeof(int), SEEK_SET);
+        if(old_width > new_width){
+          for(int x=0; x<new_width; x++){
+            for(int y=0; y<height; y++){
+              write(fd , objects+(x+old_width*y), sizeof(int));
+            }
+          }
+        }
+        else if(old_width < new_width){
+          for(int x=0; x<old_width; x++){
+            for(int y=0; y<height; y++){
+              write(fd , objects+(x+old_width*y), sizeof(int));
+            }
+          }
+          int buf = -1;
+          for(int x=old_width; x<new_width; x++){
+            for(int y=0; y<height; y++){
+              write(fd, &buf, sizeof(int));
+            }
+          }
+        }
+
+        if(old_width != new_width){
+          for(int i=0; i<nb_objects; i++){
+            char *buf = calloc(256, sizeof(char));
+            strcpy(buf, objectsname[i]);
+            write(fd, buf, 256*sizeof(char));
+            write(fd, frames+i, sizeof(int));
+            write(fd, soliditys+i, sizeof(int));
+            write(fd, destructibles+i, sizeof(int));
+            write(fd, collectibles+i, sizeof(int));
+            write(fd, generators+i, sizeof(int));
+          }
+
+        lseek(fd, 0, SEEK_SET);
+        write(fd, &new_width, sizeof(int));
+      }
+        printf("New map width : %d\n", new_width);
+      }
     }
     else if(strcmp(argv[i], "--setheight") == 0){
       i++;
@@ -223,13 +227,13 @@ int main(int argc, char** argv){
           write(fd, generators+i, sizeof(int));
         }
 
-      lseek(fd, 0, SEEK_SET);
+      lseek(fd, sizeof(int), SEEK_SET);
       write(fd, &new_height, sizeof(int));
     }
       printf("New map height : %d\n", new_height);
     }
     else{
-      fprintf (stderr, "Error 004: Unrecongnized option\n options : getwidth, getheight, getobjects, getinfo\n");
+      fprintf (stderr, "Error 003: Not Enough Args for maputil\n maputil <file> --options [value]\n options : getwidth, getheight, getobjects, getinfo\n options : setwidth [value], setheight [value]\n");
     }
   }
 
