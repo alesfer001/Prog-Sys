@@ -241,19 +241,79 @@ int main(int argc, char** argv){
         fprintf (stderr, "Error 003: Not Enough Args for maputil\n maputil <file> --options [value]\n options : getwidth, getheight, getobjects, getinfo\n options : setwidth [value], setheight [value]\n");
       }
       else{
-        i++; //filename
-        char *object = calloc(256, sizeof(char));
-        strcpy(object, argv[i]);
-        i++; //frames
-        int frames = atoi(argv[i]);
-        i++; //solidity
-        int solidity = atoi(argv[i]);
-        i++; //destructible
-        int destructible = atoi(argv[i]);
-        i++; //collectible
-        int collectible = atoi(argv[i]);
-        i++; //generator
-        int generator = atoi(argv[i]);
+        int width = 0;
+        int height = 0;
+        int nb_objects = 0;
+        read(fd, &width, sizeof(int));
+        read(fd, &height, sizeof(int));
+        read(fd, &nb_objects, sizeof(int));
+
+        if(argc < (6 * nb_objects) + 3){
+          fprintf(stderr, "Error 004: Number of objects is incompatible with constraint\n");
+          return -1;
+        }
+        else{
+          nb_objects = 0;
+          lseek(fd, (3+width*height)*sizeof(int), SEEK_SET);
+          while(i < argc - 1){
+            i++; //filename
+            char *object = calloc(256, sizeof(char));
+            strcpy(object, argv[i]);
+            i++; //frames
+            int frames = atoi(argv[i]);
+            i++; //solidity
+            int solidity;
+            int destructible;
+            int collectible;
+            int generator;
+            if(strcmp(argv[i], "solid")){
+              solidity = 2;
+            }
+            else if(strcmp(argv[i], "semi-solid")){
+              solidity = 1;
+            }
+            else if(strcmp(argv[i] , "air")){
+              solidity = 0;
+            }
+            else if(strcmp(argv[i] , "liquid")){
+              solidity = 3;
+            }
+
+            i++; //destructible
+            if(strcmp(argv[i], "destructible") == 0){
+              destructible = 1;
+            }
+            else if(strcmp(argv[i], "not-destructible") == 0){
+              destructible = 0;
+            }
+
+            i++; //collectible
+            if(strcmp(argv[i], "collectible") == 0){
+              collectible = 1;
+            }
+            else if(strcmp(argv[i], "not-collectible") == 0){
+              collectible = 0;
+            }
+
+            i++; //generator
+            if(strcmp(argv[i], "generator") == 0){
+              generator = 1;
+            }
+            else if(strcmp(argv[i], "not-generator") == 0){
+              generator = 0;
+            }
+
+            write(fd, object, 256*sizeof(char));
+            write(fd, &frames, sizeof(int));
+            write(fd, &solidity, sizeof(int));
+            write(fd, &destructible, sizeof(int));
+            write(fd, &collectible, sizeof(int));
+            write(fd, &generator, sizeof(int));
+            nb_objects++;
+          }
+          lseek(fd, 2*sizeof(int), SEEK_SET);
+          write(fd, &nb_objects, sizeof(int));
+        }
       }
     }
     else{
