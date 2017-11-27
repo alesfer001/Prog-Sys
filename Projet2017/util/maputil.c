@@ -57,10 +57,10 @@ int main(int argc, char** argv){
         read(fd, &height, sizeof(int));
         read(fd, &nb_objects, sizeof(int));
 
-        int objects[old_width*height];
+        int objects[old_width][height];
         for(int x=0; x<old_width; x++){
           for(int y=0; y<height; y++){
-            read(fd, objects+(x+old_width*y), sizeof(int));
+            read(fd, &objects[x][y], sizeof(int));
           }
         }
 
@@ -103,14 +103,14 @@ int main(int argc, char** argv){
         if(old_width > new_width){
           for(int x=0; x<new_width; x++){
             for(int y=0; y<height; y++){
-              write(fd , objects+(x+old_width*y), sizeof(int));
+              write(fd , &objects[x][y], sizeof(int));
             }
           }
         }
         else if(old_width < new_width){
           for(int x=0; x<old_width; x++){
             for(int y=0; y<height; y++){
-              write(fd , objects+(x+old_width*y), sizeof(int));
+              write(fd , &objects[x][y], sizeof(int));
             }
           }
           int buf = -1;
@@ -154,10 +154,10 @@ int main(int argc, char** argv){
         read(fd, &old_height, sizeof(int));
         read(fd, &nb_objects, sizeof(int));
 
-        int objects[width*old_height];
+        int objects[width][old_height];
         for(int x=0; x<width; x++){
           for(int y=0; y<old_height; y++){
-            read(fd, objects+(x+width*y), sizeof(int));
+            read(fd, &objects[x][y], sizeof(int));
           }
         }
 
@@ -200,20 +200,20 @@ int main(int argc, char** argv){
         if(old_height > new_height){
           for(int x=0; x<width; x++){
             for(int y=(old_height-new_height); y<old_height; y++){
-              write(fd , objects+(x+width*y), sizeof(int));
+              write(fd , &objects[x][y], sizeof(int));
             }
           }
         }
         else if(old_height < new_height){
           int buf = -1;
           for(int x=0; x<width; x++){
-            for(int y=0; y<(new_height-old_height); y++){
-              write(fd, &buf, sizeof(int));
-            }
-          }
-          for(int x=0; x<width; x++){
-            for(int y=0; y<old_height; y++){
-              write(fd, objects+(x+width*y), sizeof(int));
+            for(int y=0; y<new_height; y++){
+              if(y < new_height - old_height){
+                write(fd, &buf, sizeof(int));
+              }
+              else{
+                write(fd, &objects[x][y-(new_height-old_height)], sizeof(int));
+              }
             }
           }
         }

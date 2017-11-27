@@ -60,11 +60,11 @@ void map_save (char *filename)
   int nb_objects = map_objects();
   write(fd, &nb_objects, sizeof(int));
 
-  int map[width*height];
+  int map[width][height];
   for(int x=0; x<width; x++){
     for(int y=0; y<height; y++){
-      map[x+width*y] = map_get(x,y);
-      write(fd, map+(x+width*y), sizeof(int));
+      map[x][y] = map_get(x,y);
+      write(fd, &map[x][y], sizeof(int));
     }
   }
 
@@ -108,11 +108,11 @@ void map_load (char *filename)
   read(fd, &nb_objects, sizeof(int));
   printf("Nb objects : %d\n", nb_objects);
 
-  int objects[width*height];
+  int objects[width][height];
   for(int x=0; x<width; x++){
     for(int y=0; y<height; y++){
-      read(fd, objects+(x+width*y), sizeof(int));
-      printf("Object %d %d : %d\n", x, y, *(objects+(x+width*y)));
+      read(fd, &objects[x][y], sizeof(int));
+      printf("Object %d %d : %d\n", x, y, objects[x][y]);
     }
   }
 
@@ -163,7 +163,7 @@ void map_load (char *filename)
 
   for(int x=0; x<width; x++){
     for(int y=0; y<height; y++){
-      map_set(x, y, objects[x+width*y]);
+      map_set(x, y, objects[x][y]);
     }
   }
 
