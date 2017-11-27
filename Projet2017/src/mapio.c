@@ -97,18 +97,22 @@ void map_load (char *filename)
 
   int width;
   read(fd, &width, sizeof(int));
+  printf("Width : %d\n", width);
   int height;
   read(fd, &height, sizeof(int));
+  printf("Height : %d\n", height);
 
   map_allocate (width, height);
 
   int nb_objects;
   read(fd, &nb_objects, sizeof(int));
+  printf("Nb objects : %d\n", nb_objects);
 
   int objects[width*height];
   for(int x=0; x<width; x++){
     for(int y=0; y<height; y++){
       read(fd, objects+(x+width*y), sizeof(int));
+      printf("Object %d %d : %d\n", x, y, *(objects+(x+width*y)));
     }
   }
 
@@ -124,27 +128,33 @@ void map_load (char *filename)
     }
     lseek(fd, (0-count) * sizeof(char), SEEK_CUR);
     read(fd, object, count*sizeof(char));
+    printf("Object : %s\n", object);
     lseek(fd, (256-count) * sizeof(char), SEEK_CUR);
 
     int frames;
     read(fd, &frames, sizeof(int));
+    printf("Frames : %d\n", frames);
 
     int obj_type;
     int solidity;
     read(fd, &solidity, sizeof(int));
+    printf("Solidity : %d\n", solidity);
     obj_type = solidity;
     int destructible;
     read(fd, &destructible, sizeof(int));
+    printf("Destructible : %d\n", destructible);
     if(destructible){
       obj_type = obj_type | MAP_OBJECT_DESTRUCTIBLE;
     }
     int collectible;
     read(fd, &collectible, sizeof(int));
+    printf("Collectible : %d\n", collectible);
     if(collectible){
       obj_type = obj_type | MAP_OBJECT_COLLECTIBLE;
     }
     int generator;
     read(fd, &generator, sizeof(int));
+    printf("Generator : %d\n", generator);
     if(generator){
       obj_type = obj_type | MAP_OBJECT_GENERATOR;
     }
