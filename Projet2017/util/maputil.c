@@ -266,16 +266,16 @@ int main(int argc, char** argv){
             int destructible;
             int collectible;
             int generator;
-            if(strcmp(argv[i], "solid")){
+            if(strcmp(argv[i], "solid") == 0){
               solidity = 2;
             }
-            else if(strcmp(argv[i], "semi-solid")){
+            else if(strcmp(argv[i], "semi-solid") == 0){
               solidity = 1;
             }
-            else if(strcmp(argv[i] , "air")){
+            else if(strcmp(argv[i] , "air") == 0){
               solidity = 0;
             }
-            else if(strcmp(argv[i] , "liquid")){
+            else if(strcmp(argv[i] , "liquid") == 0){
               solidity = 3;
             }
 
@@ -315,6 +315,56 @@ int main(int argc, char** argv){
           write(fd, &nb_objects, sizeof(int));
         }
       }
+    }
+    else if(strcmp(argv[i], "--pruneobjects") == 0){
+      int width = 0;
+      int height = 0;
+      int nb_objects = 0;
+      read(fd, &width, sizeof(int));
+      read(fd, &height, sizeof(int));
+      read(fd, &nb_objects, sizeof(int));
+
+      int object_exists[nb_objects];
+      for(int i=0; i<nb_objects; i++){
+        object_exists[i] = 0;
+      }
+
+      int object = -1;
+      for(int x=0; x<width; x++){
+        for(int y=0; y<height; y++){
+          read(fd, &object, sizeof(int));
+          if(object != -1){
+            object_exists[object] = 1;
+          }
+        }
+      }
+
+      char existing_objects_strings[256*nb_objects];
+      int existing_objects_properties[5*nb_objects];
+
+      int nb_existing_objects = 0;
+      lseek(fd, (3+width*height)*sizeof(int), SEEK_SET);
+      for(int i=0; i<nb_objects; i++){
+        if(object_exists[i]){
+          read(fd, &existing_objects_strings[nb_existing_objects], 256*sizeof(char));
+          printf("Name : %s\n", existing_objects_strings[nb_existing_objects]);
+          read(fd, &existing_objects_properties[nb_existing_objects], 5*sizeof(int));
+          printf("Int : %d\n", existing_objects_strings[nb_existing_objects]);
+          nb_existing_objects++;
+        }
+        else{
+          lseek(fd, 256*sizeof(char) + 5*sizeof(int), SEEK_CUR);
+        }
+      }
+
+      lseek(fd, (3+width*height)*sizeof(int), SEEK_SET);
+      for(int i=0; i<nb_existing_objects; i++){
+        write(fd, &existing_objects_strings[nb_existing_objects], 256*sizeof(char));
+        write(fd, &existing_objects_properties[nb_existing_objects], 5*sizeof(int));
+      }
+      lseek(fd, 2*sizeof(int), SEEK_SET);
+      write(fd, &nb_existing_objects, sizeof(int));
+      ftruncate(fd, (3+width*height)*sizeof(int) + nb_existing_objects*(256*sizeof(char) + 5*sizeof(int)));
     }
     else{
       fprintf (stderr, "Error 003: Not Enough Args for maputil\n maputil <file> --options [value]\n options : getwidth, getheight, getobjects, getinfo\n options : setwidth [value], setheight [value]\n");
