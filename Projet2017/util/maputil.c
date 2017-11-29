@@ -339,17 +339,17 @@ int main(int argc, char** argv){
         }
       }
 
-      char existing_objects_strings[256*nb_objects];
-      int existing_objects_properties[5*nb_objects];
+      int existing_objects[2];
+      pipe(existing_objects);
 
       int nb_existing_objects = 0;
       lseek(fd, (3+width*height)*sizeof(int), SEEK_SET);
       for(int i=0; i<nb_objects; i++){
         if(object_exists[i]){
-          read(fd, &existing_objects_strings[nb_existing_objects], 256*sizeof(char));
-          printf("Name : %s\n", existing_objects_strings[nb_existing_objects]);
-          read(fd, &existing_objects_properties[nb_existing_objects], 5*sizeof(int));
-          printf("Int : %d\n", existing_objects_strings[nb_existing_objects]);
+          read(fd, existing_objects[1], 256*sizeof(char));
+          //printf("Name : %s\n", existing_objects_strings[nb_existing_objects]);
+          read(fd, existing_objects[1], 5*sizeof(int));
+          //printf("Int : %d\n", existing_objects_strings[nb_existing_objects]);
           nb_existing_objects++;
         }
         else{
@@ -359,8 +359,8 @@ int main(int argc, char** argv){
 
       lseek(fd, (3+width*height)*sizeof(int), SEEK_SET);
       for(int i=0; i<nb_existing_objects; i++){
-        write(fd, &existing_objects_strings[nb_existing_objects], 256*sizeof(char));
-        write(fd, &existing_objects_properties[nb_existing_objects], 5*sizeof(int));
+        write(fd, existing_objects[0], 256*sizeof(char));
+        write(fd, existing_objects[0], 5*sizeof(int));
       }
       lseek(fd, 2*sizeof(int), SEEK_SET);
       write(fd, &nb_existing_objects, sizeof(int));
