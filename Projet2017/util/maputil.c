@@ -329,39 +329,108 @@ int main(int argc, char** argv){
         object_exists[i] = 0;
       }
 
-      int object = -1;
+      int objectxy = -1;
       for(int x=0; x<width; x++){
         for(int y=0; y<height; y++){
-          read(fd, &object, sizeof(int));
-          if(object != -1){
-            object_exists[object] = 1;
+          read(fd, &objectxy, sizeof(int));
+          if(objectxy != -1){
+            object_exists[objectxy] = 1;
           }
         }
       }
 
-      int existing_objects[2];
-      pipe(existing_objects);
+      char *objectsname[nb_objects];
+      for(int i=0; i<nb_objects; i++){
+        objectsname[i] = calloc(256, sizeof(char));
+      }
+      int frames[nb_objects];
+      int soliditys[nb_objects];
+      int destructibles[nb_objects];
+      int collectibles[nb_objects];
+      int generators[nb_objects];
 
       int nb_existing_objects = 0;
       lseek(fd, (3+width*height)*sizeof(int), SEEK_SET);
+      char *object = calloc(256, sizeof(char));
       for(int i=0; i<nb_objects; i++){
         if(object_exists[i]){
-          read(fd, existing_objects[1], 256*sizeof(char));
-          //printf("Name : %s\n", existing_objects_strings[nb_existing_objects]);
-          read(fd, existing_objects[1], 5*sizeof(int));
-          //printf("Int : %d\n", existing_objects_strings[nb_existing_objects]);
+          read(fd, object, 256*sizeof(char));
+          strcpy(objectsname[i], object);
+          //printf("object : %s\n", objectsname[i]);
+
+          read(fd, frames+i, sizeof(int));
+          //printf("frames : %d\n", frames[i]);
+
+          int solidity;
+          read(fd, soliditys+i, sizeof(int));
+          //printf("soliditys : %d\n", soliditys[i]);
+          int destructible;
+          read(fd, destructibles+i, sizeof(int));
+          //printf("destructibles : %d\n", destructibles[i]);
+          int collectible;
+          read(fd, collectibles+i, sizeof(int));
+          //printf("collectibles : %d\n", collectibles[i]);
+          int generator;
+          read(fd, generators+i, sizeof(int));
+          //printf("generators : %d\n", generators[i]);
           nb_existing_objects++;
+          //printf("nb_existing_objects : %d\n", nb_existing_objects);
         }
         else{
           lseek(fd, 256*sizeof(char) + 5*sizeof(int), SEEK_CUR);
         }
       }
 
+      // Works
+
       lseek(fd, (3+width*height)*sizeof(int), SEEK_SET);
-      for(int i=0; i<nb_existing_objects; i++){
-        write(fd, existing_objects[0], 256*sizeof(char));
-        write(fd, existing_objects[0], 5*sizeof(int));
+      for(int i=0; i<nb_objects; i++){
+        if(object_exists[i]){
+          char *buf = calloc(256, sizeof(char));
+          strcpy(buf, objectsname[i]);
+          write(fd, buf, 256*sizeof(char));
+          //printf("object : %s\n", objectsname[i]);
+          //printf("object buf : %s\n", buf);
+          write(fd, &frames[i], sizeof(int));
+          //printf("frames : %d\n", frames[i]);
+          write(fd, &soliditys[i], sizeof(int));
+          //printf("soliditys : %d\n", soliditys[i]);
+          write(fd, &destructibles[i], sizeof(int));
+          //printf("destructibles : %d\n", destructibles[i]);
+          write(fd, &collectibles[i], sizeof(int));
+          //printf("collectibles : %d\n", collectibles[i]);
+          write(fd, &generators[i], sizeof(int));
+          //printf("generators : %d\n", generators[i]);
+          //printf("nb_existing_objects : %d\n", nb_existing_objects);
+        }
       }
+
+      int new_id[nb_existing_objects];
+      int id = 0;
+      for(int i=0; i<nb_objects; i++){
+        if(object_exists[i]){
+          new_id[id] = i;
+          id++;
+        }
+      }
+
+      lseek(fd, 3*sizeof(int), SEEK_SET);
+      for(int x=0; x<width; x++){
+        for(int y=0; y<height; y++){
+          read(fd, &objectxy, sizeof(int));
+          if(objectxy != -1){
+            for(int i=0; i<nb_existing_objects; i++){
+              if(objectxy == new_id[i]){
+                lseek(fd, (0-1)*sizeof(int), SEEK_CUR);
+                write(fd, &i, sizeof(int));
+              }
+            }
+          }
+        }
+      }
+
+
+
       lseek(fd, 2*sizeof(int), SEEK_SET);
       write(fd, &nb_existing_objects, sizeof(int));
       ftruncate(fd, (3+width*height)*sizeof(int) + nb_existing_objects*(256*sizeof(char) + 5*sizeof(int)));
