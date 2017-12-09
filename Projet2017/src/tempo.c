@@ -15,13 +15,15 @@
 void* thread_function(void* arg);
 void myhandler(int signum);
 void swap(int *xp, int *yp);
-void sort(int arr[], int paramids[], int n);
+void swaptimerids(timer_id_t *xp, timer_id_t *yp);
+void sort(int arr[], int paramids[], timer_id_t timerids[], int n);
 void timeval(struct itimerval *time, int val);
 
 int timers[MAX_TIMERS];
 void* params[MAX_TIMERS];
 int paramids[MAX_TIMERS];
-int paramsize = -1;
+timer_id_t timerids[MAX_TIMERS];
+timer_id_t timerid = 0;
 
 // Return number of elapsed µsec since... a long time ago
 static unsigned long get_time (void){
@@ -43,6 +45,7 @@ int timer_init (void){
     timers[i] = EMPTY_TIMER;
     params[i] = NULL;
     paramids[i] = -1;
+    timerids[i] = -1;
   }
 
   sigset_t sigset;
@@ -54,9 +57,7 @@ int timer_init (void){
   pthread_t tid;
   pthread_create(&tid, NULL, thread_function, NULL);
 
-  //timer_set(800, NULL);
-
-  return 1; // Implementation not ready
+  return 1;
 }
 
 void* thread_function(void* arg){
@@ -81,10 +82,10 @@ void myhandler(int signum){
   }
   timers[0] = EMPTY_TIMER;
   params[paramids[0]] = NULL;
-  sort(timers, paramids, MAX_TIMERS);
+  timerids[0] = -1;
+  sort(timers, paramids, timerids, MAX_TIMERS);
   if(timers[0] != EMPTY_TIMER){
     struct itimerval time;
-    getitimer(ITIMER_REAL, &time);
     timeval(&time, timers[0]);
     setitimer(ITIMER_REAL, &time, NULL);
   }
@@ -98,6 +99,8 @@ timer_id_t timer_set (Uint32 delay, void *param){
     timers[0] = delay*1000;
     params[0] = param;
     paramids[0] = 0;
+    timerids[0] = timerid;
+    timerid++;
     setitimer(ITIMER_REAL, &time, NULL);
   }
   else if(time.it_value.tv_usec > delay*1000){
@@ -115,7 +118,9 @@ timer_id_t timer_set (Uint32 delay, void *param){
     }
     params[j] = param;
     paramids[i] = j;
-    sort(timers, paramids, MAX_TIMERS);
+    timerids[i] = timerid;
+    timerid++;
+    sort(timers, paramids, timerids, MAX_TIMERS);
     timeval(&time, timers[0]);
     setitimer(ITIMER_REAL, &time, NULL);
   }
@@ -131,9 +136,11 @@ timer_id_t timer_set (Uint32 delay, void *param){
     }
     params[j] = param;
     paramids[i] = j;
-    sort(timers, paramids, MAX_TIMERS);
+    timerids[i] = timerid;
+    timerid++;
+    sort(timers, paramids, timerids, MAX_TIMERS);
   }
-  return 1;
+  return timerid-1;
 }
 
 void swap(int *xp, int *yp){
@@ -142,7 +149,13 @@ void swap(int *xp, int *yp){
     *yp = temp;
 }
 
-void sort(int arr[], int paramids[], int n){
+void swaptimerids(timer_id_t *xp, timer_id_t *yp){
+    timer_id_t temp = *xp;
+    *xp = *yp;
+    *yp = temp;
+}
+
+void sort(int arr[], int paramids[], timer_id_t timerids[], int n){
     int i, j, min_idx;
 
     // One by one move boundary of unsorted subarray
@@ -157,6 +170,7 @@ void sort(int arr[], int paramids[], int n){
         // Swap the found minimum element with the first element
         swap(&arr[min_idx], &arr[i]);
         swap(&paramids[min_idx], &paramids[i]);
+        swaptimerids(&timerids[min_idx], &timerids[i]);
     }
 }
 
@@ -178,9 +192,45 @@ void timeval(struct itimerval *time, int val){
   }
 }
 
-int timer_cancel (timer_id_t timer_id)
-{
-  // TODO
+int timer_cancel (timer_id_t timer_id){
+  int t=0;
+  while(timerids[t] != timer_id && t < MAX_TIMERS){
+    t++;
+  }
+
+  if(t < MAX_TIMERS){
+    if(t == 0){
+      struct itimerval time;
+      getitimer(ITIMER_REAL, &time);
+      int decrease = timers[0] - time.it_value.tv_usec;
+      int i=1;
+      while(timers[i] != EMPTY_TIMER){
+        timers[i] -= decrease;
+        i++;
+      }
+      timers[0] = EMPTY_TIMER;
+      params[paramids[0]] = NULL;
+      timerids[0] = -1;
+      sort(timers, paramids, timerids, MAX_TIMERS);
+      if(timers[0] != EMPTY_TIMER){
+        struct itimerval time;
+        timeval(&time, timers[0]);
+        setitimer(ITIMER_REAL, &time, NULL);
+      }
+      else{
+        struct itimerval time;
+        timeval(&time, 0);
+        setitimer(ITIMER_REAL, &time, NULL);
+      }
+    }
+    else{
+      timers[t] = EMPTY_TIMER;
+      params[paramids[t]] = NULL;
+      timerids[t] = -1;
+      sort(timers, paramids, timerids, MAX_TIMERS);
+    }
+    return 1;
+  }
 
   return 0; // failure
 }
