@@ -50,9 +50,6 @@ int main(){
     read(fd, generators+i, sizeof(int));
   }
   char buf;
-  if(read(fd, &buf, sizeof(char)) > 0){
-    printf("Error: Not end of file\n");
-  }
 
   printf("Width : %d\n", width);
   printf("Height : %d\n", height);

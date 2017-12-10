@@ -12,12 +12,14 @@
 #define EMPTY_TIMER 100000000
 #define MAX_TIMERS 100
 
-void* thread_function(void* arg);
-void myhandler(int signum);
+void* sigalrm_catcher(void* arg);
+void sigalrm_handler(int signum);
 void swap(int *xp, int *yp);
 void swaptimerids(timer_id_t *xp, timer_id_t *yp);
 void sort(int arr[], int paramids[], timer_id_t timerids[], int n);
 void timeval(struct itimerval *time, int val);
+
+pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 
 int timers[MAX_TIMERS];
 void* params[MAX_TIMERS];
@@ -55,25 +57,26 @@ int timer_init (void){
   pthread_sigmask(SIG_BLOCK, &sigset, NULL);
 
   pthread_t tid;
-  pthread_create(&tid, NULL, thread_function, NULL);
+  pthread_create(&tid, NULL, sigalrm_catcher, NULL);
 
   return 1;
 }
 
-void* thread_function(void* arg){
+void* sigalrm_catcher(void* arg){
   struct sigaction act;
-  act.sa_handler = myhandler;
+  act.sa_handler = sigalrm_handler;
   act.sa_flags = 0;
   sigemptyset(&act.sa_mask);
 
-  sigaction(SIGALRM, &act, NULL);
+  sigaction(SIGALRM , &act, NULL);
 
   while(1){
     sigsuspend(&act.sa_mask);
   }
 }
 
-void myhandler(int signum){
+void sigalrm_handler(int signum){
+  pthread_mutex_lock(&mut);
   sdl_push_event(params[paramids[0]]);
   int i=1;
   while(timers[i] != EMPTY_TIMER){
@@ -89,9 +92,11 @@ void myhandler(int signum){
     timeval(&time, timers[0]);
     setitimer(ITIMER_REAL, &time, NULL);
   }
+  pthread_mutex_unlock(&mut);
 }
 
 timer_id_t timer_set (Uint32 delay, void *param){
+  pthread_mutex_lock(&mut);
   struct itimerval time;
   getitimer(ITIMER_REAL, &time);
   if(time.it_value.tv_usec == 0){
@@ -140,6 +145,7 @@ timer_id_t timer_set (Uint32 delay, void *param){
     timerid++;
     sort(timers, paramids, timerids, MAX_TIMERS);
   }
+  pthread_mutex_unlock(&mut);
   return timerid-1;
 }
 

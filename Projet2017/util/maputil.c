@@ -356,32 +356,23 @@ int main(int argc, char** argv){
         if(object_exists[i]){
           read(fd, object, 256*sizeof(char));
           strcpy(objectsname[i], object);
-          //printf("object : %s\n", objectsname[i]);
 
           read(fd, frames+i, sizeof(int));
-          //printf("frames : %d\n", frames[i]);
 
           int solidity;
           read(fd, soliditys+i, sizeof(int));
-          //printf("soliditys : %d\n", soliditys[i]);
           int destructible;
           read(fd, destructibles+i, sizeof(int));
-          //printf("destructibles : %d\n", destructibles[i]);
           int collectible;
           read(fd, collectibles+i, sizeof(int));
-          //printf("collectibles : %d\n", collectibles[i]);
           int generator;
           read(fd, generators+i, sizeof(int));
-          //printf("generators : %d\n", generators[i]);
           nb_existing_objects++;
-          //printf("nb_existing_objects : %d\n", nb_existing_objects);
         }
         else{
           lseek(fd, 256*sizeof(char) + 5*sizeof(int), SEEK_CUR);
         }
       }
-
-      // Works
 
       lseek(fd, (3+width*height)*sizeof(int), SEEK_SET);
       for(int i=0; i<nb_objects; i++){
@@ -389,19 +380,11 @@ int main(int argc, char** argv){
           char *buf = calloc(256, sizeof(char));
           strcpy(buf, objectsname[i]);
           write(fd, buf, 256*sizeof(char));
-          //printf("object : %s\n", objectsname[i]);
-          //printf("object buf : %s\n", buf);
           write(fd, &frames[i], sizeof(int));
-          //printf("frames : %d\n", frames[i]);
           write(fd, &soliditys[i], sizeof(int));
-          //printf("soliditys : %d\n", soliditys[i]);
           write(fd, &destructibles[i], sizeof(int));
-          //printf("destructibles : %d\n", destructibles[i]);
           write(fd, &collectibles[i], sizeof(int));
-          //printf("collectibles : %d\n", collectibles[i]);
           write(fd, &generators[i], sizeof(int));
-          //printf("generators : %d\n", generators[i]);
-          //printf("nb_existing_objects : %d\n", nb_existing_objects);
         }
       }
 
